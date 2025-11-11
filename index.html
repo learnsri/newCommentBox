@@ -1,0 +1,358 @@
+<html>
+    <head>
+    <title>test comment box</title>
+    </head>
+    <body>
+        <p class="comment-description">
+  We appreciate your feedback! Please share your suggestions, queries, and comments to help us improve our services at the Lanka Education and Research Network (LEARN).
+</p>
+
+
+<!-- Comment Widget Section -->
+<div id="comment-widget"></div>
+
+<p class="Important">This form is for feedback and general inquiries only. For real-time issues like server downtime or service disruptions,</p>
+<p class="Important">DO NOT USE THIS FORM.</p>
+
+
+
+
+<script>
+/*
+  Simple, stable comment widget
+  - Keeps your layout safe (no shadow DOM isolation)
+  - Includes university search suggestions
+  - Uses Formspree for submission
+*/
+
+(function() {
+  const container = document.getElementById('comment-widget');
+  if (!container) return;
+
+  container.innerHTML = `
+    <style>
+      .widget-shell {
+        box-sizing: border-box;
+        max-width: 1150px;
+        margin: 20px auto;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        font-family: Arial, sans-serif;
+        color: #222;
+      }
+      .widget-form { display: flex; flex-direction: column; gap: 12px; }
+      .w-input, .w-textarea {
+        padding: 10px;
+        font-size: 14px;
+        border: 2px solid #b60144;
+        border-radius: 6px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .Important {
+    font-size: 16px;
+    color: red;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 0.2;
+    animation: glow 3s ease-in-out infinite;
+}
+
+@keyframes glow {
+    0% {
+        text-shadow: 0 0 1px rgba(255, 0, 0, 0.4), 0 0 4px rgba(255, 0, 0, 0.3), 0 0 7px rgba(255, 0, 0, 0.2);
+    }
+    50% {
+        text-shadow: 0 0 4px rgba(255, 0, 0, 0.5), 0 0 10px rgba(255, 0, 0, 0.4), 0 0 16px rgba(255, 0, 0, 0.3);
+    }
+    100% {
+        text-shadow: 0 0 1px rgba(255, 0, 0, 0.4), 0 0 4px rgba(255, 0, 0, 0.3), 0 0 7px rgba(255, 0, 0, 0.2);
+    }
+}
+
+
+      .comment-description {
+        font-size: 18px;
+        color: #333;
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.8;
+      }
+
+      .w-textarea { min-height: 100px; resize: vertical; }
+      .w-button {
+        padding: 12px;
+        font-size: 15px;
+        background: #b60144;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .w-button:hover { filter: brightness(.95); }
+      .search-shell { position: relative; }
+      .search-input {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: 2px solid #b60144;
+        border-radius: 6px;
+        color: #1D2451;
+        font-weight: 400;
+        box-sizing: border-box;
+      }
+      .listbox {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        max-height: 200px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.12);
+        border-radius: 6px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        z-index: 1000;
+        display: none;
+      }
+      .list-item {
+        padding: 9px 12px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #1D2451;
+      }
+      .list-item:hover, .list-item.active {
+        background: #b60144;
+        color: #fff;
+      }
+      .hint {
+        font-size: 13px;
+        color: #666;
+      }
+    </style>
+
+    <div class="widget-shell">
+      <form id="wForm" class="widget-form" action="https://formspree.io/f/mdkpqvjd" method="POST" novalidate>
+        <input id="wName" name="username" class="w-input" type="text" placeholder="Name" required />
+        <input id="wEmail" name="email" class="w-input" type="email" placeholder="Email" required />
+
+        <div class="search-shell">
+          <input id="wSearch" name="category" class="search-input" type="text" placeholder="University or Institute" autocomplete="off" required />
+          <div id="wListbox" class="listbox"></div>
+        </div>
+
+        <textarea id="wComment" name="comment" class="w-textarea" placeholder="Write your comment here..." required></textarea>
+        <button id="wSubmit" class="w-button" type="submit">Submit</button>
+      </form>
+    </div>
+  `;
+
+  const input = container.querySelector('#wSearch');
+  const listbox = container.querySelector('#wListbox');
+  const form = container.querySelector('#wForm');
+  const submitBtn = container.querySelector('#wSubmit');
+
+  const universities = [
+    "Eastern University",
+    "Gampaha Wickramarachchi University of Indigenous Medicine",
+    "Open University of Sri Lanka",
+    "Rajarata University",
+    "Sabaragamuwa University",
+    "South Eastern University",
+    "University Grant Commission",
+    "University of Colombo",
+    "University of Jaffna",
+    "University of Kelaniya",
+    "University of Moratuwa",
+    "University of Peradeniya",
+    "University of Ruhuna",
+    "University of Sri Jayawardenapura",
+    "University of the Visual and Performing Arts",
+    "University of Vavuniya",
+    "Uva-Wellassa University",
+    "Wayamba University",
+    "Arthur C Clarke Institution for Modern Technologies",
+    "Bhikshu University of Sri Lanka",
+    "Buddhist and Pali University of Sri Lanka",
+    "General Sir John Kotelawala Defence University",
+    "Industrial Technology Institute (ITI)",
+    "Institute of Chartered Accountants of Sri Lanka",
+    "Ministry of Higher Education",
+    "National Aquatic Resources Agency (NARA)",
+    "National Centre for Advanced Studies in Humanities & Social Sciences (NCAS)",
+    "National Engineering Research and Development Centre (NERDC)",
+    "National Institute of Fundamental Studies (NIFS)",
+    "National Science Foundation (NSF)",
+    "Postgraduate Institute of Agriculture (PGIA)",
+    "Postgraduate Institute of Humanities and Social Sciences (PGIHS)",
+    "Postgraduate Institute of Science (PGIS)",
+    "Sri Lanka Institute of Marketing (SLIM)",
+    "Sri Lanka Law College",
+    "Business Management School (BMS)",
+    "Chartered Institute of Personnel Management (CIPM)",
+    "DIMO Academy for Technical Skills (DIMO academy of higher education (Pvt) Ltd)",
+    "ESoft Metro Campus",
+    "IMBS Green Campus",
+    "Informatics Institute of Technology (IIT)",
+    "Institute of Chemistry",
+    "Institute of Surveying and Mapping",
+    "KAATSU International for Undergraduate-Studies",
+    "National Defence College",
+    "National Institute of Business Management",
+    "National Institute of Education",
+    "National Institute of Social Development (NISD)",
+    "National School of Business Management (NSBM)",
+    "Ocean University of Sri Lanka",
+    "Saegis Campus",
+    "SANASA Campus",
+    "SLT Campus (Pvt) Ltd",
+    "Sri Lanka – German Training Institute (SLGTI)",
+    "Sri Lanka Institute of Advanced Technical Education (SLIATE)",
+    "Sri Lanka Institute of Information Technology (SLIIT)",
+    "Sri Lanka Institute of Textile and Apparel (SLITA)",
+    "Sri Palee Campus",
+    "University College of Anuradhapura",
+    "University College of Jaffna",
+    "University College of Kuliyapitiya",
+    "University College of Matara",
+    "University College of Ratmalana",
+    "University of Vocational Technology (UNIVOTEC)"
+  ];
+
+  let visible = [];
+  let active = -1;
+
+  function closeList() {
+    listbox.style.display = 'none';
+    listbox.innerHTML = '';
+    visible = [];
+    active = -1;
+  }
+
+  function renderMatches(q) {
+    const query = q.trim().toLowerCase();
+    listbox.innerHTML = '';
+    visible = [];
+
+    if (!query) return closeList();
+
+    const matches = universities.filter(u => u.toLowerCase().includes(query));
+
+    if (matches.length === 0) {
+      const addDiv = document.createElement('div');
+      addDiv.className = 'list-item';
+      addDiv.textContent = `Add "${input.value.trim()}"`;
+      addDiv.addEventListener('click', () => {
+        input.value = input.value.trim();
+        closeList();
+      });
+      listbox.appendChild(addDiv);
+      visible.push(addDiv);
+    } else {
+      matches.forEach(text => {
+        const d = document.createElement('div');
+        d.className = 'list-item';
+        d.textContent = text;
+        d.addEventListener('click', () => {
+          input.value = text;
+          closeList();
+        });
+        listbox.appendChild(d);
+        visible.push(d);
+      });
+    }
+
+    listbox.style.display = 'block';
+  }
+
+  input.addEventListener('input', () => renderMatches(input.value));
+  input.addEventListener('keydown', (e) => {
+    if (listbox.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (active < visible.length - 1) active++;
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (active > 0) active--;
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (active >= 0) visible[active].click();
+    } else if (e.key === 'Escape') {
+      closeList();
+    }
+    visible.forEach((n, i) => n.classList.toggle('active', i === active));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!container.contains(e.target)) closeList();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('wName').value.trim();
+    const email = document.getElementById('wEmail').value.trim();
+    const university = document.getElementById('wSearch').value.trim();
+    const comment = document.getElementById('wComment').value.trim();
+
+    // Line-by-line validation
+    if (!name) {
+      alert('Please enter your name.');
+      document.getElementById('wName').focus();
+      return;
+    }
+    if (!email) {
+      alert('Please enter your email.');
+      document.getElementById('wEmail').focus();
+      return;
+    }
+    if (!university) {
+      alert('Please enter your university.');
+      document.getElementById('wSearch').focus();
+      return;
+    }
+    if (!comment) {
+      alert('Please enter your comment.');
+      document.getElementById('wComment').focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    try {
+      const fd = new FormData(form);
+      const resp = await fetch(form.action, {
+        method: 'POST',
+        body: fd,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (resp.ok) {
+        alert('Message submitted!');
+        form.reset();
+      } else {
+        alert('Submission failed.');
+      }
+    } catch (err) {
+      alert('Network error.');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+})();
+</script>
+
+    </body>
+</html>
